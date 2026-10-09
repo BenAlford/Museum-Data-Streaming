@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "ms-vsliveshare.vsliveshare",
+    "ms-python.python",
+    "qwtel.sqlite-viewer",
+    "ms-toolsai.jupyter",
+    "ms-toolsai.jupyter-keymap",
+    "ms-python.autopep8"
+  ]
+}
