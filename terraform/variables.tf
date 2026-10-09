@@ -1,7 +1,7 @@
 variable "rds_instance_name" {
   description = "Value of the RDS instance's Name tag."
   type        = string
-  default     = "c26-ben-lmnh-rds"
+  default     = "your_rds_instance_name_here"
 }
 
 variable "rds_instance_type" {

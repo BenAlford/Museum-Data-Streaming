@@ -57,6 +57,7 @@ This project can optionally be set up to run on AWS. Included in this repository
    ```
 3. Add in these required values in `variables.tf`:
    ```
+   rds_instance_name = "your_rds_instance_name_here"
    vpc_name = "your_vpc_here"
    public_subnet_1_name = "your_public_subnet_1_here"
    public_subnet_2_name = "your_public_subnet_2_here"
