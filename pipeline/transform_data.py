@@ -14,55 +14,8 @@ from dotenv import dotenv_values
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 from psycopg2 import sql
-from extract import (get_matching_s3_files,
-                     download_matching_files,
-                     combine_csv_files)
 
-CSV_FILE_PATTERN = re.compile(r"lmnh_hist_data_[0-9]\.csv")
 CONFIG = dotenv_values()
-
-# for if you want to connect to the local database instead of the remote RDS database
-
-# conn = psycopg2.connect(
-#     dbname="museum",
-#     cursor_factory=RealDictCursor
-# )
-
-# conn = psycopg2.connect(
-#     host=CONFIG["HOST"],
-#     database=CONFIG["DATABASE"],
-#     user=CONFIG["USERNAME"],
-#     password=CONFIG["PASSWORD"],
-#     cursor_factory=RealDictCursor
-# )
-
-
-def extract(bucket: str) -> pd.DataFrame:
-    """Extracts the CSV data from S3 and combines it into a single DataFrame."""
-    s3_client = boto3.client(
-        's3', aws_access_key_id=CONFIG["ACCESS_KEY"], aws_secret_access_key=CONFIG["SECRET_KEY"])
-    try:
-        matching_files = get_matching_s3_files(
-            bucket, s3_client, CSV_FILE_PATTERN)
-    except RuntimeError as e:
-        logging.critical("Error getting matching S3 files: %s", e)
-        s3_client.close()
-        print("Error getting matching S3 files")
-        sys.exit()
-
-    try:
-        downloaded_files = download_matching_files(
-            bucket, s3_client, matching_files, "./data")
-    except RuntimeError as e:
-        logging.critical("Error downloading files: %s", e)
-        s3_client.close()
-        print("Error downloading files")
-        sys.exit()
-
-    s3_client.close()
-
-    combined_csv_data = combine_csv_files(downloaded_files)
-    return combined_csv_data
 
 
 def get_data_from_museum_table(table_name: str, connection) -> pd.DataFrame:
@@ -270,53 +223,3 @@ def load_exhibition_requests(exhibition_requests_list: list[tuple], conn) -> Non
             sys.exit()
 
         cursor.execute("DROP TABLE IF EXISTS exhibition_request_staging")
-
-
-def run(bucket) -> None:
-    """Run the ETL pipeline for the specified S3 bucket."""
-    conn = psycopg2.connect(
-        dbname="museum",
-        cursor_factory=RealDictCursor
-    )
-    extracted_data = extract(bucket)
-
-    print("Getting data from museum tables")
-    exhibition_data = get_data_from_museum_table("exhibition", conn)
-    request_data = get_data_from_museum_table("request", conn)
-    ratings_data = get_data_from_museum_table("rating", conn)
-
-    print("Transforming extracted data")
-    exhibition_ratings_df, exhibition_requests_df = transform(
-        extracted_data, exhibition_data, request_data, ratings_data)
-
-    print("Loading transformed data into the database")
-    load(exhibition_ratings_df, exhibition_requests_df, conn)
-    conn.close()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(filename="etl_pipeline.log",
-                        filemode="w", level=logging.WARNING)
-
-    parser = argparse.ArgumentParser(
-        description="ETL pipeline for museum data")
-    parser.add_argument("--log-level", default="WARNING",
-                        help="Set the logging level, options are:  +\
-                            DEBUG, INFO, WARNING, ERROR and CRITICAL")
-
-    parser.add_argument("--bucket", help="Specify the S3 bucket name to search for museum data",
-                        default="sigma-resources-museum")
-    args = parser.parse_args()
-
-    # Sets the logging level and S3 bucket based on command-line arguments
-    log_level = args.log_level
-    if log_level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-        logging.getLogger().setLevel(log_level)
-    else:
-        logging.getLogger().setLevel("WARNING")
-    s3_bucket = args.bucket
-
-    print("Starting ETL pipeline")
-    run(s3_bucket)
-    # conn.close()
-    print("ETL pipeline finished")

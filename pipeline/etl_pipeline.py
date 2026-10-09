@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from confluent_kafka import Consumer
 
 from read_kafka import extract, validate_message  # noqa: E402
-from pipeline import (transform,                         # noqa: E402
+from transform_data import (transform,                         # noqa: E402
                       get_data_from_museum_table,
                       load)
 

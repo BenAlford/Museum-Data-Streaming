@@ -63,21 +63,39 @@ This project can optionally be set up to run on AWS. Included in this repository
    public_subnet_2_name = "your_public_subnet_2_here"
    key_name = "your_key_name_here"
    ```
+   Store the key file securely as it will be needed to SSH into the EC2 instance.
 4. Initialize and apply the Terraform configuration:
    ```bash
    terraform init
    terraform apply
    ```
    Once initialised, you should see the public IP of the EC2 instance and the hostname of the RDS instance. Save these for later use.
-5. SCP this repository into the EC2 instance:
+5. SCP parts of this repository into the EC2 instance:
    ```bash
-   scp -r /path/to/your/repository ec2-user@<IP>:.
+   scp -r -i /path/to/your/key.pem /path/to/your/repository/pipeline ec2-user@<IP>:.
+   scp -r -i /path/to/your/key.pem /path/to/your/repository/requirements.txt ec2-user@<IP>:.
+   scp -r -i /path/to/your/key.pem /path/to/your/repository/reset_data.bash ec2-user@<IP>:.
+   scp -r -i /path/to/your/key.pem /path/to/your/repository/.env ec2-user@<IP>:.
    ```
-6. Setup the database, entering the password when prompted:
+6. SSH into the EC2 instance:
+   ```bash
+   ssh -i /path/to/your/key.pem ec2-user@<IP>
+   ```
+7. Install PostgreSQL:
+   ```bash
+   sudo dnf install postgresql15
+   ```
+8. Setup the database, entering the password when prompted:
    ```bash
    psql -h <RDS_HOSTNAME> -U <DB_USERNAME> -d museum -f setup.sql
    ```
-7. Run the ETL pipeline:
+9. Install necessary python packages:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+10. Run the ETL pipeline:
    ```bash
    cd pipeline
    nohup python3 etl_pipeline.py &
@@ -108,3 +126,10 @@ python3 etl_pipeline.py --log-level DEBUG
 ```
 
 This argument is not required and has the default value of `INFO`.
+
+## Resetting the Database
+
+The database can be reset using the `reset_data.bash` script. This will clear all existing data and reinitialize the database schema.
+```bash
+bash reset_data.bash
+```

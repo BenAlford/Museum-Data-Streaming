@@ -24,7 +24,7 @@ with patch("psycopg2.connect") as _mock_connect, patch.dict("os.environ", DB_ENV
     _mock_cursor.fetchall.return_value = []
     import read_kafka as kafka
     import etl_pipeline as etl
-    import pipeline as pipe
+    import transform_data as pipe
 
 VALID_TIME = "2024-01-01T10:00:00"
 
